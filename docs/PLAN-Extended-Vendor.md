@@ -4,6 +4,9 @@
 
 Replace the current demo-driven app behavior with **database-backed operational data** while preserving the existing UI structure and admin workflows. The system will use MongoDB as the source of truth for customers, delivery status, billing, calendars, area analytics, products, vendors, and purchases.
 
+
+
+
 This rollout will use **repeatable demo seeding** as the initial dataset:
 - around 40 seeded customers
 - seeded areas, products, vendors
