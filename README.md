@@ -1,6 +1,6 @@
 # Milkman
 
-Lightweight, mobile-friendly milk delivery management app built with Next.js and MongoDB for Indian milk sellers. read by mukesh one
+Lightweight, mobile-friendly milk delivery management app built with Next.js and MongoDB for Indian milk sellers. read by mukesh one two three..
 
 ## Vision
 
