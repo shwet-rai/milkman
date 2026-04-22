@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Store, PencilLine, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   AdminBadge,
   AdminButton,

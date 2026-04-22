@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminCard } from "@/components/layout/admin-ui";
@@ -12,6 +13,8 @@ type EditCustomerPageProps = {
 
 export default async function EditCustomerPage({ params }: EditCustomerPageProps) {
   const { locale, customerId } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.customers" });
   const [customer, areas] = await Promise.all([
     getCustomerDetailData(customerId),
     getAreasData(),
@@ -22,15 +25,7 @@ export default async function EditCustomerPage({ params }: EditCustomerPageProps
   }
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "कस्टमर संपादित करें" : "Edit Customer"}
-      subtitle={
-        locale === "hi"
-          ? "मौजूदा ग्राहक की प्रोफाइल, योजना और area mapping अपडेट करें."
-          : "Update the existing customer profile, plan, and area mapping."
-      }
-    >
+    <AdminShell locale={locale} title={t("editTitle")} subtitle={t("editSubtitle")}>
       <AdminCard>
         <div className="flex items-center gap-3">
           <Link
@@ -41,9 +36,7 @@ export default async function EditCustomerPage({ params }: EditCustomerPageProps
           </Link>
           <div>
             <h2 className="text-lg font-semibold text-[var(--admin-text)]">{customer.name}</h2>
-            <p className="mt-1 text-sm text-[var(--admin-muted)]">
-              Review the plan, dues, and route note before saving.
-            </p>
+            <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("editReviewNote")}</p>
           </div>
         </div>
       </AdminCard>
