@@ -735,7 +735,10 @@ export async function getReportsData() {
 
 export async function getProductsData() {
   const base = await getBaseData();
-  return base.products;
+  return base.products.map(p => ({
+    ...p,
+    _id: String(p._id)
+  }));
 }
 
 export async function getVendorsData() {
