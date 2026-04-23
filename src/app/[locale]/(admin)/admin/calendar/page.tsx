@@ -1,4 +1,5 @@
 import { CalendarRange, CircleDollarSign, Droplets, Users } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminBadge, AdminCard, AdminStatCard } from "@/components/layout/admin-ui";
@@ -11,44 +12,39 @@ type AdminCalendarPageProps = {
 
 export default async function AdminCalendarPage({ params }: AdminCalendarPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.calendar" });
+  const tLegend = await getTranslations({ locale, namespace: "calendar.legend" });
   const { monthMeta, days, areaBreakdown, summary } = await getAdminCalendarData();
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "कैलेंडर व्यू" : "Calendar View"}
-      subtitle={
-        locale === "hi"
-          ? "दिनवार consumption, peak days और area-wise insights देखें."
-          : "Review day-wise consumption, peak days, and area-wise insights."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <div className="grid gap-4 md:grid-cols-4">
         <AdminStatCard
-          label="Monthly liters"
+          label={t("stats.monthlyLiters")}
           value={`${summary.totalLiters.toFixed(1)} L`}
-          hint="Combined delivered liters across routes"
+          hint={t("stats.monthlyLitersHint")}
           icon={Droplets}
           tone="blue"
         />
         <AdminStatCard
-          label="Active customers"
+          label={t("stats.activeCustomers")}
           value={`${summary.activeCustomers}`}
-          hint="Customers contributing to calendar totals"
+          hint={t("stats.activeCustomersHint")}
           icon={Users}
           tone="success"
         />
         <AdminStatCard
-          label="Peak day"
+          label={t("stats.peakDay")}
           value={`${summary.peakDay.dayOfMonth} ${monthMeta.monthLabel.slice(0, 3)}`}
-          hint={`${summary.peakDay.liters.toFixed(1)} L consumed`}
+          hint={t("stats.peakDayHint", { liters: summary.peakDay.liters.toFixed(1) })}
           icon={CalendarRange}
           tone="warning"
         />
         <AdminStatCard
-          label="Revenue estimate"
+          label={t("stats.revenueEstimate")}
           value={formatCurrencyINR(summary.totalRevenueEstimate)}
-          hint="Built from actual billable records"
+          hint={t("stats.revenueEstimateHint")}
           icon={CircleDollarSign}
           tone="danger"
         />
@@ -61,11 +57,20 @@ export default async function AdminCalendarPage({ params }: AdminCalendarPagePro
             leadingBlankSlots={monthMeta.leadingBlankSlots}
             days={days}
             variant="admin"
+            legendLabels={{
+              delivered: tLegend("delivered"),
+              paused: tLegend("paused"),
+              skipped: tLegend("skipped"),
+            }}
             renderFooter={(day) => (
               <>
                 <div>{day.dateLabel}</div>
                 <div>
-                  {day.deliveredCount} delivered • {day.pausedCount} paused • {day.skippedCount} skipped
+                  {t("dayFooter", {
+                    delivered: day.deliveredCount,
+                    paused: day.pausedCount,
+                    skipped: day.skippedCount,
+                  })}
                 </div>
               </>
             )}
@@ -77,13 +82,11 @@ export default async function AdminCalendarPage({ params }: AdminCalendarPagePro
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--admin-text)]">
-                  Area consumption insights
+                  {t("insights.title")}
                 </h2>
-                <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                  Compare mapped customer count and liters by area.
-                </p>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("insights.subtitle")}</p>
               </div>
-              <AdminBadge tone="blue">Month summary</AdminBadge>
+              <AdminBadge tone="blue">{t("insights.monthSummary")}</AdminBadge>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -95,13 +98,13 @@ export default async function AdminCalendarPage({ params }: AdminCalendarPagePro
                       <p className="mt-1 text-sm text-[var(--admin-muted)]">{area.code}</p>
                     </div>
                     <AdminBadge tone={area.customerCount > 0 ? "success" : "warning"}>
-                      {area.customerCount} customers
+                      {t("insights.customersCount", { count: area.customerCount })}
                     </AdminBadge>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-[18px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Daily
+                        {t("insights.daily")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {area.dailyConsumption.toFixed(1)} L
@@ -109,7 +112,7 @@ export default async function AdminCalendarPage({ params }: AdminCalendarPagePro
                     </div>
                     <div className="rounded-[18px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Billed
+                        {t("insights.billed")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {formatCurrencyINR(area.monthlyBilled)}
@@ -117,7 +120,7 @@ export default async function AdminCalendarPage({ params }: AdminCalendarPagePro
                     </div>
                     <div className="rounded-[18px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Due
+                        {t("insights.due")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {formatCurrencyINR(area.dueAmount)}

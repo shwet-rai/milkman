@@ -1,4 +1,5 @@
 import { BadgeIndianRupee, CircleDollarSign, CreditCard, WalletCards } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PaymentEntryForm } from "@/components/billing/payment-entry-form";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminBadge, AdminCard, AdminStatCard } from "@/components/layout/admin-ui";
@@ -11,36 +12,31 @@ type AdminBillingPageProps = {
 
 export default async function AdminBillingPage({ params }: AdminBillingPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.billing" });
+  const tStatus = await getTranslations({ locale, namespace: "status" });
   const billing = await getBillingData();
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "बिलिंग और पेमेंट्स" : "Billing & Payments"}
-      subtitle={
-        locale === "hi"
-          ? "हर कस्टमर का billed amount, paid amount और due amount live records से."
-          : "Track billed amount, paid amount, and due amount for every customer from live records."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <div className="grid gap-4 md:grid-cols-3">
         <AdminStatCard
-          label="Billed this month"
+          label={t("stats.billed")}
           value={formatCurrencyINR(billing.summary.billedAmount)}
-          hint="Combined total from delivered milk and add-on line items"
+          hint={t("stats.billedHint")}
           icon={BadgeIndianRupee}
         />
         <AdminStatCard
-          label="Amount received"
+          label={t("stats.received")}
           value={formatCurrencyINR(billing.summary.paidAmount)}
-          hint="UPI, bank, and cash entries reconciled"
+          hint={t("stats.receivedHint")}
           icon={WalletCards}
           tone="success"
         />
         <AdminStatCard
-          label="Due amount"
+          label={t("stats.due")}
           value={formatCurrencyINR(billing.summary.dueAmount)}
-          hint="Follow up before monthly closing"
+          hint={t("stats.dueHint")}
           icon={CircleDollarSign}
           tone="warning"
         />
@@ -50,14 +46,14 @@ export default async function AdminBillingPage({ params }: AdminBillingPageProps
         <AdminCard>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-[var(--admin-text)]">Accounts overview</h2>
-              <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                Compact ledger cards designed to stay readable on phones.
-              </p>
+              <h2 className="text-lg font-semibold text-[var(--admin-text)]">
+                {t("accountsTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("accountsSubtitle")}</p>
             </div>
             <AdminBadge tone="blue">
               <CreditCard className="h-3.5 w-3.5" />
-              Month-end summary
+              {t("monthEndSummary")}
             </AdminBadge>
           </div>
           <div className="mt-5 grid gap-3">
@@ -68,17 +64,17 @@ export default async function AdminBillingPage({ params }: AdminBillingPageProps
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-[var(--admin-text)]">{account.name}</h3>
                       <AdminBadge tone={account.due > 0 ? "warning" : "success"}>
-                        {account.due > 0 ? "Due pending" : "Cleared"}
+                        {account.due > 0 ? tStatus("duePending") : tStatus("cleared")}
                       </AdminBadge>
                     </div>
                     <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                      {account.areaName} ledger • {account.areaCode}
+                      {t("ledgerLine", { area: account.areaName, code: account.areaCode })}
                     </p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[500px]">
                     <div className="rounded-[20px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Billed
+                        {t("billed")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {formatCurrencyINR(account.billed)}
@@ -86,7 +82,7 @@ export default async function AdminBillingPage({ params }: AdminBillingPageProps
                     </div>
                     <div className="rounded-[20px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Paid
+                        {t("paid")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {formatCurrencyINR(account.paid)}
@@ -94,7 +90,7 @@ export default async function AdminBillingPage({ params }: AdminBillingPageProps
                     </div>
                     <div className="rounded-[20px] bg-white px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                        Due
+                        {t("due")}
                       </p>
                       <p className="mt-2 font-semibold text-[var(--admin-text)]">
                         {formatCurrencyINR(account.due)}
@@ -118,9 +114,11 @@ export default async function AdminBillingPage({ params }: AdminBillingPageProps
 
           <AdminCard>
             <div>
-              <h2 className="text-lg font-semibold text-[var(--admin-text)]">Recent entries</h2>
+              <h2 className="text-lg font-semibold text-[var(--admin-text)]">
+                {t("recentEntriesTitle")}
+              </h2>
               <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                Latest billing actions and collections
+                {t("recentEntriesSubtitle")}
               </p>
             </div>
             <div className="mt-4 space-y-3">

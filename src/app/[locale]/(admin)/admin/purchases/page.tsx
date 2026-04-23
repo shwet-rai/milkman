@@ -1,4 +1,5 @@
 import { BadgeIndianRupee, Droplets, WalletCards } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PurchaseManagementPanel } from "@/components/purchases/purchase-management-panel";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminCard, AdminStatCard } from "@/components/layout/admin-ui";
@@ -11,6 +12,8 @@ type AdminPurchasesPageProps = {
 
 export default async function AdminPurchasesPage({ params }: AdminPurchasesPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.purchases" });
   const [ledger, vendors, products] = await Promise.all([
     getPurchaseLedgerData(),
     getVendorsData(),
@@ -18,43 +21,32 @@ export default async function AdminPurchasesPage({ params }: AdminPurchasesPageP
   ]);
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "परचेज लेजर" : "Purchase Ledger"}
-      subtitle={
-        locale === "hi"
-          ? "वेंडर से daily purchase, milk inward और payment status को track करें."
-          : "Track daily vendor purchases, milk inward, and supplier payment status."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <div className="grid gap-4 md:grid-cols-3">
         <AdminStatCard
-          label="Purchase total"
+          label={t("stats.total")}
           value={formatCurrencyINR(ledger.summary.totalPurchaseAmount)}
-          hint="Current month inward purchase amount"
+          hint={t("stats.totalHint")}
           icon={BadgeIndianRupee}
         />
         <AdminStatCard
-          label="Milk inward"
+          label={t("stats.milkInward")}
           value={`${ledger.summary.totalMilkInward.toFixed(1)} L`}
-          hint="Milk-category purchases only"
+          hint={t("stats.milkInwardHint")}
           icon={Droplets}
           tone="success"
         />
         <AdminStatCard
-          label="Unpaid entries"
+          label={t("stats.unpaid")}
           value={String(ledger.summary.unpaidEntries)}
-          hint="Supplier dues needing follow-up"
+          hint={t("stats.unpaidHint")}
           icon={WalletCards}
           tone="warning"
         />
       </div>
 
       <AdminCard>
-        <p className="text-sm text-[var(--admin-muted)]">
-          Purchase rows stay separate from customer sales so outward billing and inward sourcing
-          analytics remain logically correct.
-        </p>
+        <p className="text-sm text-[var(--admin-muted)]">{t("note")}</p>
       </AdminCard>
 
       <PurchaseManagementPanel

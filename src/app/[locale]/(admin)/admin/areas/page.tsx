@@ -1,3 +1,4 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AreaManagementPanel } from "@/components/areas/area-management-panel";
 import { AdminShell } from "@/components/layout/admin-shell";
 
@@ -7,17 +8,11 @@ type AdminAreasPageProps = {
 
 export default async function AdminAreasPage({ params }: AdminAreasPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.areas" });
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "एरिया मैनेजमेंट" : "Area Management"}
-      subtitle={
-        locale === "hi"
-          ? "एरिया कोड्स, नाम और स्टेटस को मैनेज करें."
-          : "Manage area codes, names, and status for customer mapping and analytics."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <AreaManagementPanel />
     </AdminShell>
   );

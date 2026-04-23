@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, FilePenLine, MapPin, Phone, WalletCards } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminBadge, AdminCard } from "@/components/layout/admin-ui";
 import { getCustomerDetailData } from "@/lib/data-service";
@@ -10,31 +11,42 @@ type CustomerDetailPageProps = {
   params: Promise<{ locale: string; customerId: string }>;
 };
 
+function getStatusTone(status: string) {
+  if (status === "ACTIVE") return "success" as const;
+  if (status === "PAUSED") return "warning" as const;
+  return "danger" as const;
+}
+
+function getStatusKey(status: string): "active" | "paused" | "pending" {
+  if (status === "ACTIVE") return "active";
+  if (status === "PAUSED") return "paused";
+  return "pending";
+}
+
+function getDeliveryStatusKey(
+  status: string,
+): "delivered" | "paused" | "skipped" | "pending" {
+  if (status === "DELIVERED") return "delivered";
+  if (status === "PAUSED") return "paused";
+  if (status === "SKIPPED") return "skipped";
+  return "pending";
+}
+
 export default async function CustomerDetailPage({ params }: CustomerDetailPageProps) {
   const { locale, customerId } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.customers" });
+  const tStatus = await getTranslations({ locale, namespace: "status" });
   const customer = await getCustomerDetailData(customerId);
 
   if (!customer) {
     notFound();
   }
 
-  const statusTone =
-    customer.status === "ACTIVE"
-      ? "success"
-      : customer.status === "PAUSED"
-        ? "warning"
-        : "danger";
+  const statusTone = getStatusTone(customer.status);
 
   return (
-    <AdminShell
-      locale={locale}
-      title={customer.name}
-      subtitle={
-        locale === "hi"
-          ? "कस्टमर की योजना, पता, भुगतान और डिलीवरी रिकॉर्ड."
-          : "Customer plan, address, payments, and delivery records."
-      }
-    >
+    <AdminShell locale={locale} title={customer.name} subtitle={t("detailSubtitle")}>
       <AdminCard>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
@@ -44,10 +56,10 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-semibold text-[var(--admin-text)]">{customer.name}</h2>
-                <AdminBadge tone={statusTone}>{customer.status}</AdminBadge>
+                <AdminBadge tone={statusTone}>{tStatus(getStatusKey(customer.status))}</AdminBadge>
               </div>
               <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                Customer code • {customer.customerCode} • {customer.areaCode}
+                {t("customerCodeLine", { code: customer.customerCode, area: customer.areaCode })}
               </p>
             </div>
           </div>
@@ -56,7 +68,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             className="admin-outline-button px-4 py-3 text-sm font-semibold"
           >
             <FilePenLine className="h-4 w-4" />
-            Edit customer
+            {t("editCustomer")}
           </Link>
         </div>
       </AdminCard>
@@ -67,7 +79,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             <div className="admin-panel-muted rounded-[24px] p-4">
               <div className="flex items-center gap-2 text-[var(--admin-muted)]">
                 <Phone className="h-4 w-4" />
-                <span className="text-sm">Contact</span>
+                <span className="text-sm">{t("contact")}</span>
               </div>
               <p className="mt-2 text-base font-semibold text-[var(--admin-text)]">
                 {customer.phone}
@@ -77,7 +89,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             <div className="admin-panel-muted rounded-[24px] p-4">
               <div className="flex items-center gap-2 text-[var(--admin-muted)]">
                 <MapPin className="h-4 w-4" />
-                <span className="text-sm">Address</span>
+                <span className="text-sm">{t("address")}</span>
               </div>
               <p className="mt-2 text-base font-semibold text-[var(--admin-text)]">
                 {customer.address}
@@ -90,10 +102,10 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             <div className="admin-panel-muted rounded-[24px] p-4">
               <div className="flex items-center gap-2 text-[var(--admin-muted)]">
                 <WalletCards className="h-4 w-4" />
-                <span className="text-sm">Notes</span>
+                <span className="text-sm">{t("notes")}</span>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--admin-text)]">
-                {customer.notes || "No internal note"}
+                {customer.notes || t("noInternalNote")}
               </p>
             </div>
           </div>
@@ -103,7 +115,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-[22px] bg-[var(--admin-primary-soft)] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                Milk plan
+                {t("milkPlan")}
               </p>
               <p className="mt-2 text-2xl font-semibold text-[var(--admin-text)]">
                 {customer.quantityLabel}
@@ -111,7 +123,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             </div>
             <div className="rounded-[22px] bg-white px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                Rate
+                {t("rate")}
               </p>
               <p className="mt-2 text-2xl font-semibold text-[var(--admin-text)]">
                 {formatCurrencyINR(customer.rate)}
@@ -119,7 +131,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             </div>
             <div className="rounded-[22px] bg-white px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                Due
+                {t("due")}
               </p>
               <p className="mt-2 text-2xl font-semibold text-[var(--admin-text)]">
                 {formatCurrencyINR(customer.due)}
@@ -129,13 +141,13 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="admin-panel-muted rounded-[22px] p-4">
-              <p className="text-sm text-[var(--admin-muted)]">Billed this month</p>
+              <p className="text-sm text-[var(--admin-muted)]">{t("billedThisMonth")}</p>
               <p className="mt-2 text-xl font-semibold text-[var(--admin-text)]">
                 {formatCurrencyINR(customer.billed)}
               </p>
             </div>
             <div className="admin-panel-muted rounded-[22px] p-4">
-              <p className="text-sm text-[var(--admin-muted)]">Amount paid</p>
+              <p className="text-sm text-[var(--admin-muted)]">{t("amountPaid")}</p>
               <p className="mt-2 text-xl font-semibold text-[var(--admin-text)]">
                 {formatCurrencyINR(customer.paid)}
               </p>
@@ -149,26 +161,28 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
               href={`/${locale}/admin/deliveries`}
               className="admin-primary-button justify-center px-4 py-3 text-sm font-semibold"
             >
-              Mark delivery now
+              {t("markDeliveryNow")}
             </Link>
             <Link
               href={`/${locale}/admin/billing`}
               className="admin-secondary-button justify-center px-4 py-3 text-sm font-semibold"
             >
-              Record payment
+              {t("recordPayment")}
             </Link>
             <Link
               href={`/${locale}/admin/customers/${customer.customerCode}/edit`}
               className="admin-outline-button justify-center px-4 py-3 text-sm font-semibold"
             >
-              Update profile
+              {t("updateProfile")}
             </Link>
           </div>
 
           <div className="admin-divider my-5" />
 
           <div>
-            <h3 className="text-base font-semibold text-[var(--admin-text)]">Recent delivery log</h3>
+            <h3 className="text-base font-semibold text-[var(--admin-text)]">
+              {t("recentDeliveryLog")}
+            </h3>
             <div className="mt-4 space-y-3">
               {customer.recentDeliveries.length ? (
                 customer.recentDeliveries.map((entry) => (
@@ -180,8 +194,10 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
                       <div>
                         <p className="font-semibold text-[var(--admin-text)]">{entry.dateLabel}</p>
                         <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                          {entry.finalQuantity.toFixed(1)} L delivered • Extra{" "}
-                          {entry.extraQuantity.toFixed(1)} L
+                          {t("deliveredLiters", {
+                            final: entry.finalQuantity.toFixed(1),
+                            extra: entry.extraQuantity.toFixed(1),
+                          })}
                         </p>
                       </div>
                       <AdminBadge
@@ -193,15 +209,19 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
                               : "danger"
                         }
                       >
-                        {entry.status}
+                        {tStatus(getDeliveryStatusKey(entry.status))}
                       </AdminBadge>
                     </div>
                     {entry.addOnItems.length ? (
                       <p className="mt-2 text-sm text-[var(--admin-muted)]">
-                        Add-ons:{" "}
-                        {entry.addOnItems
-                          .map((item) => `${item.productName || item.productCode} x ${item.quantity || 0}`)
-                          .join(", ")}
+                        {t("addOnsLine", {
+                          list: entry.addOnItems
+                            .map(
+                              (item) =>
+                                `${item.productName || item.productCode} x ${item.quantity || 0}`,
+                            )
+                            .join(", "),
+                        })}
                       </p>
                     ) : null}
                     {entry.note ? (
@@ -211,7 +231,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
                 ))
               ) : (
                 <div className="admin-panel-muted rounded-[22px] p-4 text-sm text-[var(--admin-muted)]">
-                  No delivery log found for the current month.
+                  {t("noDeliveryLog")}
                 </div>
               )}
             </div>

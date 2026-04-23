@@ -1,3 +1,4 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { VendorManagementPanel } from "@/components/vendors/vendor-management-panel";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminCard } from "@/components/layout/admin-ui";
@@ -9,23 +10,14 @@ type AdminVendorsPageProps = {
 
 export default async function AdminVendorsPage({ params }: AdminVendorsPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.vendors" });
   const [vendors, areas] = await Promise.all([getVendorsData(), getAreasData()]);
 
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "वेंडर्स" : "Vendors"}
-      subtitle={
-        locale === "hi"
-          ? "बाहरी दूध suppliers और उनकी area mapping यहाँ manage करें."
-          : "Manage external milk suppliers and their area mapping here."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <AdminCard>
-        <p className="text-sm text-[var(--admin-muted)]">
-          Vendor master data feeds the daily purchase ledger, inward milk tracking, and unpaid
-          supplier visibility.
-        </p>
+        <p className="text-sm text-[var(--admin-muted)]">{t("note")}</p>
       </AdminCard>
       <VendorManagementPanel
         initialVendors={vendors}

@@ -21,6 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 type AdminShellProps = {
@@ -30,30 +31,46 @@ type AdminShellProps = {
   subtitle: string;
 };
 
-const navItems = [
-  { href: "dashboard", label: "Dashboard", icon: Home },
-  { href: "vendors", label: "Vendors", icon: Store },
-  { href: "customers", label: "Customers", icon: Users },
-  { href: "deliveries", label: "Deliveries", icon: Droplets },
-  { href: "calendar", label: "Calendar", icon: CalendarDays },
-  { href: "billing", label: "Billing", icon: CreditCard },
-  { href: "reports", label: "Reports", icon: ChartColumn },
-  { href: "purchases", label: "Purchases", icon: ShoppingCart },
-  { href: "areas", label: "Areas", icon: Building2 },
-  { href: "products", label: "Products", icon: Package2 },
+type NavKey =
+  | "dashboard"
+  | "vendors"
+  | "customers"
+  | "deliveries"
+  | "calendar"
+  | "billing"
+  | "reports"
+  | "purchases"
+  | "areas"
+  | "products";
+
+type NavItem = {
+  href: NavKey;
+  icon: typeof Home;
+};
+
+const navItems: NavItem[] = [
+  { href: "dashboard", icon: Home },
+  { href: "vendors", icon: Store },
+  { href: "customers", icon: Users },
+  { href: "deliveries", icon: Droplets },
+  { href: "calendar", icon: CalendarDays },
+  { href: "billing", icon: CreditCard },
+  { href: "reports", icon: ChartColumn },
+  { href: "purchases", icon: ShoppingCart },
+  { href: "areas", icon: Building2 },
+  { href: "products", icon: Package2 },
 ];
 
 export function AdminShell({ children, locale, title, subtitle }: AdminShellProps) {
   const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const tShell = useTranslations("admin.shell");
+  const tNav = useTranslations("admin.nav");
 
-  const renderNavItem = ({
-    href,
-    label,
-    icon: Icon,
-  }: (typeof navItems)[number]) => {
+  const renderNavItem = ({ href, icon: Icon }: NavItem) => {
     const target = `/${locale}/admin/${href}`;
     const isActive = pathname === target || pathname.startsWith(`${target}/`);
+    const label = tNav(href);
 
     return (
       <Link
@@ -79,19 +96,21 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
             </div>
             <div>
               <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-[var(--admin-muted)]">
-                Milkman
+                {tShell("brand")}
               </p>
-              <p className="mt-1 text-xl font-semibold text-[var(--admin-text)]">Admin Panel</p>
+              <p className="mt-1 text-xl font-semibold text-[var(--admin-text)]">
+                {tShell("panelTitle")}
+              </p>
             </div>
           </div>
 
           <div className="admin-panel-muted mt-6 rounded-[24px] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--admin-muted)]">
-              Workspace
+              {tShell("workspace")}
             </p>
-            <p className="mt-2 text-base font-semibold">Morning Delivery Run</p>
+            <p className="mt-2 text-base font-semibold">{tShell("workspaceTitle")}</p>
             <p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">
-              Compact control room for customers, routes, billing, and daily delivery marks.
+              {tShell("workspaceDescription")}
             </p>
           </div>
 
@@ -106,13 +125,13 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
-                  Help
+                  {tShell("helpLabel")}
                 </p>
-                <p className="text-sm font-semibold">Need billing guidance?</p>
+                <p className="text-sm font-semibold">{tShell("helpTitle")}</p>
               </div>
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--admin-muted)]">
-              Keep the morning route smooth with quick access to delivery and dues summaries.
+              {tShell("helpDescription")}
             </p>
           </div>
         </aside>
@@ -139,23 +158,28 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--admin-muted)]">
-                    Milkman
+                    {tShell("brand")}
                   </p>
-                  <p className="text-lg font-semibold">Admin Menu</p>
+                  <p className="text-lg font-semibold">{tShell("mobileTitle")}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
                 className="admin-icon-button h-11 w-11"
+                aria-label={tShell("closeMenu")}
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="admin-panel-muted mt-5 rounded-[24px] p-4">
-              <p className="text-sm font-medium text-[var(--admin-muted)]">Active route</p>
-              <p className="mt-1 text-base font-semibold">128 customers this cycle</p>
+              <p className="text-sm font-medium text-[var(--admin-muted)]">
+                {tShell("activeRoute")}
+              </p>
+              <p className="mt-1 text-base font-semibold">
+                {tShell("customersThisCycle", { count: 128 })}
+              </p>
             </div>
 
             <nav className="mt-5 space-y-2">{navItems.map(renderNavItem)}</nav>
@@ -171,12 +195,13 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
                     type="button"
                     onClick={() => setIsDrawerOpen(true)}
                     className="admin-icon-button h-11 w-11 lg:hidden"
+                    aria-label={tShell("openMenu")}
                   >
                     <Menu className="h-5 w-5" />
                   </button>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--admin-muted)]">
-                      Milkman workspace
+                      {tShell("workspaceEyebrow")}
                     </p>
                     <p className="truncate text-lg font-semibold text-[var(--admin-text)] sm:text-xl">
                       {title}
@@ -190,10 +215,14 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
                     className="admin-primary-button px-4 py-2.5 text-sm font-semibold"
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Quick Mark</span>
-                    <span className="sm:hidden">Mark</span>
+                    <span className="hidden sm:inline">{tShell("quickMark")}</span>
+                    <span className="sm:hidden">{tShell("quickMarkShort")}</span>
                   </Link>
-                  <button type="button" className="admin-icon-button h-11 w-11">
+                  <button
+                    type="button"
+                    className="admin-icon-button h-11 w-11"
+                    aria-label={tShell("notifications")}
+                  >
                     <Bell className="h-5 w-5" />
                   </button>
                 </div>
@@ -206,7 +235,7 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--admin-muted)]">
-                    Seller control room
+                    {tShell("heroEyebrow")}
                   </p>
                   <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--admin-text)] sm:text-3xl">
                     {title}
@@ -216,9 +245,9 @@ export function AdminShell({ children, locale, title, subtitle }: AdminShellProp
                   </p>
                 </div>
                 <div className="admin-panel-muted rounded-[22px] px-4 py-3 text-sm text-[var(--admin-muted)]">
-                  <span className="font-semibold text-[var(--admin-text)]">Live mode</span>
+                  <span className="font-semibold text-[var(--admin-text)]">{tShell("liveMode")}</span>
                   <span className="mx-2 text-[var(--admin-border)]">•</span>
-                  <span>Super admin preview</span>
+                  <span>{tShell("superAdminPreview")}</span>
                 </div>
               </div>
             </section>

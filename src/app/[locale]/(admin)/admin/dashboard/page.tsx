@@ -8,6 +8,7 @@ import {
   MoveRight,
   Users,
 } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { AdminBadge, AdminCard, AdminStatCard } from "@/components/layout/admin-ui";
 import {
@@ -25,6 +26,9 @@ export default async function AdminDashboardPage({
   params,
 }: AdminDashboardPageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "admin.dashboard" });
+  const tStatus = await getTranslations({ locale, namespace: "status" });
   const [{ kpis, routeSnapshot, attentionCustomers }, purchaseLedger, adminCalendar] =
     await Promise.all([getDashboardData(), getPurchaseLedgerData(), getAdminCalendarData()]);
 
@@ -44,41 +48,63 @@ export default async function AdminDashboardPage({
       )
     : 0;
 
+  const followUpCount = attentionCustomers.filter((entry) => entry.issue === "Payment overdue").length;
+
+  const progressRows: Array<{ label: string; value: number }> = [
+    { label: t("progress.deliveryCompletion"), value: routeCoverage },
+    { label: t("progress.paymentRecovery"), value: collectionRate },
+    { label: t("progress.milkInwardCoverage"), value: inwardCoverage },
+  ];
+
+  const quickActions: Array<[string, string]> = [
+    [t("quickActions.addCustomer"), `/${locale}/admin/customers/new`],
+    [t("quickActions.markDeliveries"), `/${locale}/admin/deliveries`],
+    [t("quickActions.recordPayment"), `/${locale}/admin/billing`],
+    [t("quickActions.capturePurchase"), `/${locale}/admin/purchases`],
+  ];
+
+  const performanceCards: Array<[string, string, string]> = [
+    [t("performance.pending"), String(kpis.todayPending), "admin-badge-danger"],
+    [t("performance.delivered"), String(kpis.todayDelivered), "admin-badge-success"],
+    [
+      t("performance.unpaidPurchases"),
+      String(purchaseLedger.summary.unpaidEntries),
+      "admin-badge-warning",
+    ],
+    [
+      t("performance.milkInward"),
+      `${purchaseLedger.summary.totalMilkInward.toFixed(1)} L`,
+      "admin-badge-blue",
+    ],
+  ];
+
   return (
-    <AdminShell
-      locale={locale}
-      title={locale === "hi" ? "एडमिन डैशबोर्ड" : "Admin Dashboard"}
-      subtitle={
-        locale === "hi"
-          ? "आज की डिलीवरी, कस्टमर स्टेटस, बकाया और purchase cycle पर त्वरित नज़र."
-          : "A quick view of today's deliveries, customer status, outstanding dues, and purchase cycle."
-      }
-    >
+    <AdminShell locale={locale} title={t("title")} subtitle={t("subtitle")}>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <AdminStatCard
-          label="Active customers"
+          label={t("stats.activeCustomers")}
           value={String(kpis.activeCustomers)}
-          hint={`${kpis.todayPending} customers still need today's status update`}
+          hint={t("stats.activeCustomersHint", { count: kpis.todayPending })}
           icon={Users}
         />
         <AdminStatCard
-          label="Today's deliveries"
+          label={t("stats.todaysDeliveries")}
           value={String(kpis.todayDelivered)}
-          hint={`${kpis.todayPending} households still pending`}
+          hint={t("stats.todaysDeliveriesHint", { count: kpis.todayPending })}
           icon={Droplets}
           tone="success"
         />
         <AdminStatCard
-          label="Monthly sales"
+          label={t("stats.monthlySales")}
           value={formatCurrencyINR(kpis.monthlySales)}
-          hint="Built from delivered milk and add-on products"
+          hint={t("stats.monthlySalesHint")}
           icon={BadgeIndianRupee}
           tone="warning"
         />
         <AdminStatCard
-          label="Outstanding dues"
+          label={t("stats.outstandingDues")}
           value={formatCurrencyINR(kpis.monthlyDue)}
-          hint={`${attentionCustomers.filter((entry) => entry.issue === "Payment overdue").length} accounts need follow-up`}
+          hint={t("stats.outstandingDuesHint", { count: followUpCount })}
           icon={CircleAlert}
           tone="danger"
         />
@@ -87,27 +113,26 @@ export default async function AdminDashboardPage({
       <div className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
         <AdminCard className="overflow-hidden">
           <div className="rounded-[24px] bg-[linear-gradient(180deg,#edf4ff_0%,#e8efff_100%)] p-5">
-            <AdminBadge tone="blue">Morning milk cycle</AdminBadge>
+            <AdminBadge tone="blue">{t("hero.badge")}</AdminBadge>
             <h2 className="mt-4 max-w-xl text-3xl font-semibold tracking-tight text-[var(--admin-text)]">
-              Deliveries, dues, and milk purchase operations from one compact control room.
+              {t("hero.title")}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--admin-muted)]">
-              This dashboard now reads from live MongoDB records, so delivery status, extra milk,
-              add-on products, payments, and inward purchase activity stay aligned in one place.
+              {t("hero.description")}
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
                 href={`/${locale}/admin/deliveries`}
                 className="admin-primary-button px-4 py-3 text-sm font-semibold"
               >
-                Start morning run
+                {t("hero.startRun")}
                 <MoveRight className="h-4 w-4" />
               </Link>
               <Link
                 href={`/${locale}/admin/purchases`}
                 className="admin-secondary-button px-4 py-3 text-sm font-semibold"
               >
-                Review purchase ledger
+                {t("hero.reviewLedger")}
               </Link>
             </div>
           </div>
@@ -117,10 +142,13 @@ export default async function AdminDashboardPage({
               <article key={area.areaCode} className="admin-panel-muted rounded-[22px] px-4 py-4">
                 <p className="text-sm font-medium text-[var(--admin-muted)]">{area.areaName}</p>
                 <p className="mt-2 text-lg font-semibold text-[var(--admin-text)]">
-                  {area.customerCount} customers
+                  {t("routeCustomers", { count: area.customerCount })}
                 </p>
                 <p className="mt-1 text-sm font-medium text-[var(--admin-primary-strong)]">
-                  {area.deliveredCount} delivered • {area.liters.toFixed(1)} L
+                  {t("routeSummary", {
+                    delivered: area.deliveredCount,
+                    liters: area.liters.toFixed(1),
+                  })}
                 </p>
               </article>
             ))}
@@ -131,20 +159,17 @@ export default async function AdminDashboardPage({
           <AdminCard>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--admin-text)]">Quick actions</h2>
+                <h2 className="text-lg font-semibold text-[var(--admin-text)]">
+                  {t("quickActions.title")}
+                </h2>
                 <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                  Thumb-friendly actions for customer delivery and supply cycle
+                  {t("quickActions.subtitle")}
                 </p>
               </div>
               <Gauge className="h-5 w-5 text-[var(--admin-primary-strong)]" />
             </div>
             <div className="mt-4 grid gap-3">
-              {[
-                ["Add customer", `/${locale}/admin/customers/new`],
-                ["Mark deliveries", `/${locale}/admin/deliveries`],
-                ["Record payment", `/${locale}/admin/billing`],
-                ["Capture purchase", `/${locale}/admin/purchases`],
-              ].map(([label, href]) => (
+              {quickActions.map(([label, href]) => (
                 <Link
                   key={label}
                   href={href}
@@ -160,19 +185,15 @@ export default async function AdminDashboardPage({
           <AdminCard>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--admin-text)]">Progress</h2>
-                <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                  Live completion from customer, billing, and purchase records
-                </p>
+                <h2 className="text-lg font-semibold text-[var(--admin-text)]">
+                  {t("progress.title")}
+                </h2>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("progress.subtitle")}</p>
               </div>
-              <AdminBadge tone="success">On Track</AdminBadge>
+              <AdminBadge tone="success">{tStatus("onTrack")}</AdminBadge>
             </div>
             <div className="mt-5 space-y-4">
-              {[
-                ["Delivery completion", routeCoverage],
-                ["Payment recovery", collectionRate],
-                ["Milk inward coverage", inwardCoverage],
-              ].map(([label, value]) => (
+              {progressRows.map(({ label, value }) => (
                 <div key={label}>
                   <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                     <p className="font-medium text-[var(--admin-text)]">{label}</p>
@@ -193,11 +214,9 @@ export default async function AdminDashboardPage({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-[var(--admin-text)]">
-                Delivery attention points
+                {t("attention.title")}
               </h2>
-              <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                Customers needing a manual follow-up based on today&apos;s delivery or billing
-              </p>
+              <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("attention.subtitle")}</p>
             </div>
             <Activity className="h-5 w-5 text-[var(--admin-primary-strong)]" />
           </div>
@@ -222,25 +241,20 @@ export default async function AdminDashboardPage({
         <AdminCard>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-[var(--admin-text)]">Daily performance</h2>
-              <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                Quick snapshot of route, dues, and purchase-health metrics
-              </p>
+              <h2 className="text-lg font-semibold text-[var(--admin-text)]">
+                {t("performance.title")}
+              </h2>
+              <p className="mt-1 text-sm text-[var(--admin-muted)]">{t("performance.subtitle")}</p>
             </div>
             <Link
               href={`/${locale}/admin/reports`}
               className="admin-outline-button px-4 py-3 text-sm font-semibold"
             >
-              View full summary
+              {t("performance.viewSummary")}
             </Link>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              ["Pending", String(kpis.todayPending), "admin-badge-danger"],
-              ["Delivered", String(kpis.todayDelivered), "admin-badge-success"],
-              ["Unpaid purchases", String(purchaseLedger.summary.unpaidEntries), "admin-badge-warning"],
-              ["Milk inward", `${purchaseLedger.summary.totalMilkInward.toFixed(1)} L`, "admin-badge-blue"],
-            ].map(([label, value, badgeClass]) => (
+            {performanceCards.map(([label, value, badgeClass]) => (
               <div key={label} className="admin-panel-muted rounded-[24px] px-4 py-5">
                 <span className={`admin-badge ${badgeClass}`}>{label}</span>
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-[var(--admin-text)]">
